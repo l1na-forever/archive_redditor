@@ -1,35 +1,37 @@
 package main
 
 import (
-	"errors"
+	"flag"
 	"fmt"
 	"github.com/jzelinskie/geddit"
-	"github.com/stvp/slug"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
-	"time"
 )
 
 const (
-	userAgent                = "github.com/l1na-forever/archive_redditor 0.1"
-	newDirectoryMode         = 0755
-	newFileMode              = 0644
-	submissionDateLayout     = "20060102"
-	submissionTitleSeparator = '-'
+	userAgent        = "github.com/l1na-forever/archive_redditor 0.1"
+	newDirectoryMode = 0755
 )
 
 func init() {
-	slug.Replacement = submissionTitleSeparator
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [optional flags] <username> <output path>\n\nOptional flags:\n", os.Args[0])
+		flag.PrintDefaults()
+	}
 }
 
 func main() {
-	if len(os.Args) < 3 {
-		log.Fatal("USAGE: " + os.Args[0] + " <username> <output path>")
+	flag.Parse()
+
+	args := flag.Args()
+	if len(args) < 2 {
+		fmt.Printf("USAGE: %s <username> <output path>\n", os.Args[0])
+		flag.PrintDefaults()
+		os.Exit(1)
 	}
 
-	err := archive(os.Args[1], os.Args[2])
+	err := archive(args[0], args[1])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,8 +49,14 @@ func archive(username, baseOutputPath string) error {
 		return err
 	}
 
+	tmpl, err := SubmissionTemplate()
+	if err != nil {
+		return err
+	}
+
 	for _, submission := range submissions {
-		err = archiveSubmission(baseOutputPath, submission)
+		path := path.Join(baseOutputPath, SubmissionFilename(submission))
+		err = ArchiveSubmission(path, tmpl, submission)
 		if err != nil {
 			// Log the error, but continue archiving other submissions
 			log.Println(err)
@@ -56,33 +64,4 @@ func archive(username, baseOutputPath string) error {
 	}
 
 	return nil
-}
-
-func archiveSubmission(baseOutputPath string, submission *geddit.Submission) error {
-	// At the moment, the tool only supports archiving self text
-	if !submission.IsSelf {
-		return nil
-	}
-
-	outputPath := path.Join(baseOutputPath, submissionFilename(submission))
-
-	// Don't overwrite existing posts
-	if _, err := os.Stat(outputPath); err != nil {
-		if os.IsExist(err) {
-			return nil
-		}
-	}
-
-	err := ioutil.WriteFile(outputPath, []byte(submission.Selftext), newFileMode)
-	if err != nil {
-		return errors.New(fmt.Sprintf("Error saving %s: %s", outputPath, err.Error()))
-	}
-
-	return nil
-}
-
-func submissionFilename(submission *geddit.Submission) string {
-	dateCreated := time.Unix(int64(submission.DateCreated), 0)
-	dateCreatedFormatted := dateCreated.Format(submissionDateLayout)
-	return fmt.Sprintf("%s_%s_%s_%s.txt", dateCreatedFormatted, submission.ID, slug.Clean(submission.Author), slug.Clean(submission.Title))
 }
