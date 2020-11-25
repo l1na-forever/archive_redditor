@@ -13,6 +13,10 @@ To install from source, first, [Install Go](https://golang.org/doc/install), and
 
 ## Usage
 
+To get help, run the command:
+
+    archive_redditor -help
+
 To archive a redditor's submissions, run the command:
 
     archive_redditor <username> <output directory path>
@@ -23,9 +27,50 @@ This will create the directory and populate it with text files of the following 
 
 The contexts of the file will be the submission's selftext. Existing files won't be erased or overwritten.
 
+**Using templates:**
+
+By default, posts will be written to a plain text file consisting of a simple header, and the post's contents. This output format can be customized by passing in a `-template` argument:
+
+    archive_redditor -template templates/book_template.md <username> <output directory path>
+
+A template file might look like this:
+
+    # {{.Title}}
+
+    **{{.Author}}** - {{.Date}}
+
+    {{.Selftext}}
+
+    \newpage
+
+
+Notably, each field is accessed with the syntax `{{.FieldName}}`. Other text is from the templating engine, and can be used to set directives (e.g., for TeX/Pandoc). See [the `templates` directory](https://github.com/l1na-forever/archive_redditor/tree/mainline/templates/) in this repository for examples. Templates are rendered using [Go's built-in templating facility](https://golang.org/pkg/text/template/); no sanitization is performed on the template (you should not run templates you don't trust). Available fields include:
+
+* `Author`
+* `Date`
+* `NumComments`
+* `Permalink`
+* `Score`, `Ups`, `Downs`
+* `Selftext`
+* `SelftextHTML`
+* `Subreddit`
+* `Title`
+
+The full list of available fields can be found [here](https://godoc.org/github.com/jzelinskie/geddit#Submission).
+
+**Generating PDFs/E-books:**
+
+The script `make_book.sh`, included in this repository, can be used to generate a single document. The document hands the user's posts to [Pandoc](https://pandoc.org/), which renders to one of its supported file formats (based on the output filename). To run the included script:
+
+    ./make_book.sh <username> <filename>
+
+To generate an E-book suitable for an E-reader, the ePub (`.epub`) format is usually the best bet. For Kindle devices, [Calibre](https://calibre-ebook.com/) includes a handy `ebook-convert` utility which can convert to the Kindle-compatible `.mobi` format (`pandoc` doesn't support outputting `.mobi` on its own):
+
+    ebook-convert output.epub output.mobi
+
 ## Status
 
-Presently, the utility saves only selftext posts hosted on reddit.com. In the future, support may be added for archiving additional types of posts. Support may also be added for archiving off-site links (for example, archiving a user's images hosted off-site).
+Presently, the utility saves only selftext posts hosted on reddit.com. Customization of the output file format is supported. In the future, support may be added for archiving additional types of posts. Support may also be added for archiving off-site links (for example, archiving a user's images hosted off-site).
 
 ## Licence
 
