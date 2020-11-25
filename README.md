@@ -68,6 +68,10 @@ To generate an E-book suitable for an E-reader, the ePub (`.epub`) format is usu
 
     ebook-convert output.epub output.mobi
 
+The results will look something like this:
+
+![Picture of an E-reader displaying an example document](https://raw.githubusercontent.com/l1na-forever/archive_redditor/mainline/assets/example.jpeg)
+
 ## Status
 
 Presently, the utility saves only selftext posts hosted on reddit.com. Customization of the output file format is supported. In the future, support may be added for archiving additional types of posts. Support may also be added for archiving off-site links (for example, archiving a user's images hosted off-site).
